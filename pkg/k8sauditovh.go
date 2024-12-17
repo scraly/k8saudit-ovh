@@ -1,12 +1,16 @@
 package k8sauditovh
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 
+	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk"
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins"
+	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins/source"
 	"github.com/falcosecurity/plugins/plugins/k8saudit/pkg/k8saudit"
+
+	"github.com/gorilla/websocket"
 
 	"log"
 )
@@ -20,13 +24,9 @@ var (
 	EventSource string
 )
 
-// TODO: use a URL has a parameter for the plugin
-// "wss://gra1.logs.ovh.com/tail/?tk=bbbc8ce0-b2b5-4318-a23e-24eeeb69b6fe"
 type PluginConfig struct {
-	LDPWSURL string `json:"url"          jsonschema:"title=url,description=The LDP Websocket URL to use to get the OVHcloud MKS Audit Logs sent to a LDP data stream"`
 }
 
-// TODO: faire comme k8suadit ?
 // Plugin represents our plugin
 type Plugin struct {
 	k8saudit.Plugin
@@ -62,8 +62,19 @@ func (p *Plugin) Init(config string) error {
 	return nil
 }
 
+func (p *Plugin) OpenParams() ([]sdk.OpenParam, error) {
+	return []sdk.OpenParam{
+		{Value: "", Desc: "The LDP Websocket URL to use to get the OVHcloud MKS Audit Logs sent to a LDP data stream"},
+	}, nil
+}
+
 // Open is called by Falco plugin framework for opening a stream of events, we call that an instance
-func (Plugin *Plugin) Open(params string) (source.Instance, error) {
+func (Plugin *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
+
+	if ovhLDPURL == "" {
+		return nil, fmt.Errorf("OVHcloud LDP URL can't be empty")
+	}
+
 	eventC := make(chan source.PushEvent)
 
 	// launch an async worker that listens for bitcoin tx and pushes them
@@ -71,7 +82,7 @@ func (Plugin *Plugin) Open(params string) (source.Instance, error) {
 	go func() {
 		defer close(eventC)
 
-		u := url.URL{Scheme: "wss", Host: "ws.blockchain.info", Path: "inv"}
+		u := url.URL{Scheme: "wss", Host: ovhLDPURL, Path: "inv"}
 		v, _ := url.QueryUnescape(u.String())
 
 		wsChan, _, err := websocket.DefaultDialer.Dial(v, make(http.Header))
@@ -81,57 +92,27 @@ func (Plugin *Plugin) Open(params string) (source.Instance, error) {
 		}
 		defer wsChan.Close()
 
-		err = wsChan.WriteMessage(websocket.TextMessage, []byte(`{"op": "unconfirmed_sub"}`))
-		if err != nil {
-			eventC <- source.PushEvent{Err: err}
-			return
-		}
-
 		for {
 			_, msg, err := wsChan.ReadMessage()
 			if err != nil {
 				eventC <- source.PushEvent{Err: err}
 				return
 			}
-			var tx Tx
-			err = json.Unmarshal(msg, &tx)
+
+			// Parse audit events payload thanls to k8saudit extract parse and extract methods
+			values, err := Plugin.Plugin.ParseAuditEventsPayload(msg)
 			if err != nil {
-				eventC <- source.PushEvent{Err: err}
-				return
+				Plugin.Logger.Println(err)
+				continue
 			}
-			for _, i := range tx.X.Inputs {
-				var d []string
-				for _, j := range tx.X.Out {
-					d = append(d, j.Addr)
+			for _, j := range values {
+				if j.Err != nil {
+					Plugin.Logger.Println(j.Err)
+					continue
 				}
-				event := Event{
-					Time:         tx.X.Time,
-					Hash:         tx.X.Hash,
-					Relayedby:    tx.X.Relayedby,
-					Wallet:       i.PrevOut.Addr,
-					Amount:       uint64(i.PrevOut.Value),
-					Transaction:  "sent",
-					Destinations: d,
-				}
-				m, _ := json.Marshal(event)
-				eventC <- source.PushEvent{Data: m}
-			}
-			for _, i := range tx.X.Out {
-				var d []string
-				for _, j := range tx.X.Inputs {
-					d = append(d, j.PrevOut.Addr)
-				}
-				event := Event{
-					Time:        tx.X.Time,
-					Hash:        tx.X.Hash,
-					Relayedby:   tx.X.Relayedby,
-					Wallet:      i.Addr,
-					Amount:      uint64(i.Value),
-					Transaction: "received",
-					Sources:     d,
-				}
-				m, _ := json.Marshal(event)
-				eventC <- source.PushEvent{Data: m}
+
+				//eventC <- source.PushEvent{Data: *j}
+				eventC <- *j
 			}
 
 		}

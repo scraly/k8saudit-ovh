@@ -1,404 +1,125 @@
-# 🧰 falcoctl
+# Kubernetes Audit Events Plugin for OVHcloud
 
-[![Falco Core Repository](https://github.com/falcosecurity/evolution/blob/main/repos/badges/falco-core-blue.svg)](https://github.com/falcosecurity/evolution/blob/main/REPOSITORIES.md#core-scope) [![Stable](https://img.shields.io/badge/status-stable-brightgreen?style=for-the-badge)](https://github.com/falcosecurity/evolution/blob/main/REPOSITORIES.md#stable) [![License](https://img.shields.io/github/license/falcosecurity/falcoctl?style=for-the-badge)](./LICENSE)
-
-The official CLI tool for working with [Falco](https://github.com/falcosecurity/falco) and its [ecosystem components](https://falco.org/docs/#what-are-the-ecosystem-projects-that-can-interact-with-falco).
-
-## Installation
-### Install falcoctl manually
-You can download and install *falcoctl* manually following the appropriate instructions based on your operating system architecture.
-#### Linux
-##### AMD64
-```bash
-LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
-curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_linux_amd64.tar.gz" | tar -xz
-sudo install -o root -g root -m 0755 falcoctl /usr/local/bin/falcoctl
-```
-##### ARM64
-```bash
-LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
-curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_linux_arm64.tar.gz" | tar -xz
-sudo install -o root -g root -m 0755 falcoctl /usr/local/bin/falcoctl
-```
-> NOTE: Make sure */usr/local/bin* is in your PATH environment variable.
-
-#### MacOS
-The easiest way to install on MacOS is via `Homebrew`:
-```bash
-brew install falcoctl
-```
-
-Alternatively, you can download directly from the source:
-
-##### Intel
-```bash
-LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
-curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_darwin_amd64.tar.gz" | tar -xz
-chmod +x falcoctl
-sudo mv falcoctl /usr/local/bin/falcoctl
-```
-##### Apple Silicon
-```bash
-LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
-curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_darwin_arm64.tar.gz" | tar -xz
-chmod +x falcoctl
-sudo mv falcoctl /usr/local/bin/falcoctl
-```
-
-Alternatively, you can manually download *falcoctl* from the [falcoctl releases](https://github.com/falcosecurity/falcoctl/releases) page on GitHub.
-
-### Install falcoctl from source
-You can install *falcoctl* from source. First thing clone the *falcoctl* repository, build the *falcoctl* binary, and move it to a file location in your system **PATH**.
-```bash
-git clone https://github.com/falcosecurity/falcoctl.git
-cd falcoctl
-make falcoctl
-sudo mv falcoctl /usr/local/bin/falcoctl
-```
-
-# Getting Started
-
-## Installing an artifact
-
-This tutorial aims at presenting how to install a Falco artifact. The next few steps will present us with the fundamental commands of *falcoctl* and how to use them.
-
-First thing, we need to add a new `index` to *falcoctl*:
-```bash
-$ falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
-```
-We just downloaded the metadata of the **artifacts** hosted and distributed by the **falcosecurity** organization and made them available to the *falcoctl* tool.
-Now let's check that the `index` file is in place by running:
-```
-$ falcoctl index list
-```
-We should get an output similar to this one:
-```
-NAME            URL                                                     ADDED                   UPDATED            
-falcosecurity   https://falcosecurity.github.io/falcoctl/index.yaml     2022-10-25 15:01:25     2022-10-25 15:01:25
-```
-Now let's search all the artifacts related to *cloudtrail*:
-```
-$ falcoctl artifact search cloudtrail
-INDEX           ARTIFACT                TYPE            REGISTRY        REPOSITORY                              
-falcosecurity   cloudtrail              plugin          ghcr.io         falcosecurity/plugins/plugin/cloudtrail 
-falcosecurity   cloudtrail-rules        rulesfile       ghcr.io         falcosecurity/plugins/ruleset/cloudtrail
-```
-Lets install the *cloudtrail plugin*:
-```
-$ falcoctl artifact install cloudtrail --plugins-dir=./
- INFO  Reading all configured index files from "/home/aldo/.config/falcoctl/indexes.yaml"
- INFO  Preparing to pull "ghcr.io/falcosecurity/plugins/plugin/cloudtrail:latest"
- INFO  Remote registry "ghcr.io" implements docker registry API V2
- INFO  Pulling 44136fa355b3: ############################################# 100% 
- INFO  Pulling 80e0c33f30c0: ############################################# 100% 
- INFO  Pulling b024dd7a2a63: ############################################# 100% 
- INFO  Artifact successfully installed in "./" 
-```
-Install the *cloudtrail-rules* rulesfile:
-```
-$ ./falcoctl artifact install cloudtrail-rules --rulesfiles-dir=./
- INFO  Reading all configured index files from "/home/aldo/.config/falcoctl/indexes.yaml"
- INFO  Preparing to pull "ghcr.io/falcosecurity/plugins/ruleset/cloudtrail:latest"
- INFO  Remote registry "ghcr.io" implements docker registry API V2
- INFO  Pulling 44136fa355b3: ############################################# 100% 
- INFO  Pulling e0dccb7b0f1d: ############################################# 100% 
- INFO  Pulling 575bced78731: ############################################# 100% 
- INFO  Artifact successfully installed in "./"
-```
-
-We should have now two new files in the current directory: `aws_cloudtrail_rules.yaml` and `libcloudtrail.so`.
-
-# Falcoctl Configuration Files
-
-## `/etc/falcoctl/falcoctl.yaml`
-
-The `falco configuration file` is a yaml file that contains some metadata about the `falcoctl` behaviour.
-It contains the list of the indexes where the artifacts are listed, how often and which artifacts needed to be updated periodically.
-The default configuration is stored in `/etc/falcoctl/falcoctl.yaml`.
-This is an example of a falcoctl configuration file:
-
-``` yaml
-artifact:
-  follow:
-    every: 6h0m0s
-    falcoVersions: http://localhost:8765/versions
-    refs:
-    - falco-rules:0
-    - my-rules:1
-  install:
-    refs:
-      - cloudtrail-rules:latest
-      - cloudtrail:latest
-    rulesfilesdir: /tmp/rules
-    pluginsdir: /tmp/plugins
-indexes:
-- name: falcosecurity
-  url: https://falcosecurity.github.io/falcoctl/index.yaml
-- name: my-index
-  url: https://example.com/falcoctl/index.yaml
-registry:
-  auth:
-    basic:
-    - password: password
-      registry: myregistry.example.com:5000
-      user: user
-    oauth:
-    - registry: myregistry.example.com:5001
-      clientsecret: "999999"
-      clientid: "000000"
-      tokenurl: http://myregistry.example.com:9096/token
-    gcp:
-    - registry: europe-docker.pkg.dev
-```
-
-## `~/.config/falcoctl/`
-
-The `~/.config/falcoctl/` directory contains:
-- *cache objects*
-- *OAuth2 client credentials*
-
-### `~/.config/falcoctl/indexes.yaml`
-
-This file is used for cache purposes and contains the *index refs* added by the command `falcoctl index add [name] [ref]`. The *index ref* is enriched with two timestamps to track when it was added and the last time is was updated. Once the *index ref* is added, `falcoctl` will download the real index in the `~/.config/falcoctl/indexes/` directory. Moreover, every time the index is fetched, the `updated_timestamp` is updated.
-
-### `~/.config/falcoctl/clientcredentials.json`
-
-The command `falcoctl registry auth oauth` will add the `clientcredentials.json` file to the `~/.config/falcoctl/` directory. That file will contain all the needed information for the OAuth2 authetication.
-
-# Falcoctl Commands
-
-## Falcoctl index
-
-The `index` file is a yaml file that contains some metadata about the Falco **artifacts**. Each entry carries information such as the name, type, registry, repository and other info for the given **artifact**. Different *falcoctl* commands rely on the metadata contained in the `index` file for their operation.
-This is an example of an index file:
+## Introduction
+This plugin extends Falco to support [Kubernetes Audit Events](https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#audit-backends) from OVHcloud MKS clusters as a new data source.
+For more details about what Audit logs are, see the [README of k8saudit plugin](https://github.com/falcosecurity/plugins/blob/main/plugins/k8saudit/README.md).
+### Functionality
+This plugin supports consuming Kubernetes Audit Events stored in OVHcloud Log Data Platform (LDP) for the MKS Clusters, see [OVHcloud official documentation](https://help.ovhcloud.com/csm/fr-public-cloud-kubernetes-forwarding-audit-logs?id=kb_article_view&sysparm_article=KB0062284) for details.
+## Capabilities
+The `k8saudit-ovh` uses the field extraction methods of the [`k8saudit`](https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit) plugin as the format for the Audit Logs is same.
+### Event Source
+The event source for Kubernetes Audit Events from OVHcloud is `k8s_audit`, it allows to use same rules than `k8saudit` plugin.
+### Supported Fields
+Here is the current set of supported fields (from `k8saudit` plugin's extractor):
+<!-- README-PLUGIN-FIELDS -->
+|                        NAME                        |      TYPE       |      ARG      |                                                                                                 DESCRIPTION                                                                                                  |
+|----------------------------------------------------|-----------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `ka.auditid`                                       | `string`        | None          | The unique id of the audit event                                                                                                                                                                             |
+| `ka.stage`                                         | `string`        | None          | Stage of the request (e.g. RequestReceived, ResponseComplete, etc.)                                                                                                                                          |
+| `ka.auth.decision`                                 | `string`        | None          | The authorization decision                                                                                                                                                                                   |
+| `ka.auth.reason`                                   | `string`        | None          | The authorization reason                                                                                                                                                                                     |
+| `ka.auth.openshift.decision`                       | `string`        | None          | The authentication decision of the openshfit apiserver extention. Only available on openshift clusters                                                                                                       |
+| `ka.auth.openshift.username`                       | `string`        | None          | The user name performing the openshift authentication operation. Only available on openshift clusters                                                                                                        |
+| `ka.user.name`                                     | `string`        | None          | The user name performing the request                                                                                                                                                                         |
+| `ka.user.groups`                                   | `string (list)` | None          | The groups to which the user belongs                                                                                                                                                                         |
+| `ka.impuser.name`                                  | `string`        | None          | The impersonated user name                                                                                                                                                                                   |
+| `ka.verb`                                          | `string`        | None          | The action being performed                                                                                                                                                                                   |
+| `ka.uri`                                           | `string`        | None          | The request URI as sent from client to server                                                                                                                                                                |
+| `ka.uri.param`                                     | `string`        | Key, Required | The value of a given query parameter in the uri (e.g. when uri=/foo?key=val, ka.uri.param[key] is val).                                                                                                      |
+| `ka.target.name`                                   | `string`        | None          | The target object name                                                                                                                                                                                       |
+| `ka.target.namespace`                              | `string`        | None          | The target object namespace                                                                                                                                                                                  |
+| `ka.target.resource`                               | `string`        | None          | The target object resource                                                                                                                                                                                   |
+| `ka.target.subresource`                            | `string`        | None          | The target object subresource                                                                                                                                                                                |
+| `ka.target.pod.name`                               | `string`        | None          | The target pod name                                                                                                                                                                                          |
+| `ka.req.binding.subjects`                          | `string (list)` | None          | When the request object refers to a cluster role binding, the subject (e.g. account/users) being linked by the binding                                                                                       |
+| `ka.req.binding.role`                              | `string`        | None          | When the request object refers to a cluster role binding, the role being linked by the binding                                                                                                               |
+| `ka.req.binding.subject.has_name`                  | `string`        | Key, Required | Deprecated, always returns "N/A". Only provided for backwards compatibility                                                                                                                                  |
+| `ka.req.configmap.name`                            | `string`        | None          | If the request object refers to a configmap, the configmap name                                                                                                                                              |
+| `ka.req.configmap.obj`                             | `string`        | None          | If the request object refers to a configmap, the entire configmap object                                                                                                                                     |
+| `ka.req.pod.containers.image`                      | `string (list)` | Index         | When the request object refers to a pod, the container's images.                                                                                                                                             |
+| `ka.req.container.image`                           | `string`        | None          | Deprecated by ka.req.pod.containers.image. Returns the image of the first container only                                                                                                                     |
+| `ka.req.pod.containers.image.repository`           | `string (list)` | Index         | The same as req.container.image, but only the repository part (e.g. falcosecurity/falco).                                                                                                                    |
+| `ka.req.container.image.repository`                | `string`        | None          | Deprecated by ka.req.pod.containers.image.repository. Returns the repository of the first container only                                                                                                     |
+| `ka.req.pod.host_ipc`                              | `string`        | None          | When the request object refers to a pod, the value of the hostIPC flag.                                                                                                                                      |
+| `ka.req.pod.host_network`                          | `string`        | None          | When the request object refers to a pod, the value of the hostNetwork flag.                                                                                                                                  |
+| `ka.req.container.host_network`                    | `string`        | None          | Deprecated alias for ka.req.pod.host_network                                                                                                                                                                 |
+| `ka.req.pod.host_pid`                              | `string`        | None          | When the request object refers to a pod, the value of the hostPID flag.                                                                                                                                      |
+| `ka.req.pod.containers.host_port`                  | `string (list)` | Index         | When the request object refers to a pod, all container's hostPort values.                                                                                                                                    |
+| `ka.req.pod.containers.privileged`                 | `string (list)` | Index         | When the request object refers to a pod, the value of the privileged flag for all containers.                                                                                                                |
+| `ka.req.container.privileged`                      | `string`        | None          | Deprecated by ka.req.pod.containers.privileged. Returns true if any container has privileged=true                                                                                                            |
+| `ka.req.pod.containers.allow_privilege_escalation` | `string (list)` | Index         | When the request object refers to a pod, the value of the allowPrivilegeEscalation flag for all containers                                                                                                   |
+| `ka.req.pod.containers.read_only_fs`               | `string (list)` | Index         | When the request object refers to a pod, the value of the readOnlyRootFilesystem flag for all containers                                                                                                     |
+| `ka.req.pod.run_as_user`                           | `string`        | None          | When the request object refers to a pod, the runAsUser uid specified in the security context for the pod. See ....containers.run_as_user for the runAsUser for individual containers                         |
+| `ka.req.pod.containers.run_as_user`                | `string (list)` | Index         | When the request object refers to a pod, the runAsUser uid for all containers                                                                                                                                |
+| `ka.req.pod.containers.eff_run_as_user`            | `string (list)` | Index         | When the request object refers to a pod, the initial uid that will be used for all containers. This combines information from both the pod and container security contexts and uses 0 if no uid is specified |
+| `ka.req.pod.run_as_group`                          | `string`        | None          | When the request object refers to a pod, the runAsGroup gid specified in the security context for the pod. See ....containers.run_as_group for the runAsGroup for individual containers                      |
+| `ka.req.pod.containers.run_as_group`               | `string (list)` | Index         | When the request object refers to a pod, the runAsGroup gid for all containers                                                                                                                               |
+| `ka.req.pod.containers.eff_run_as_group`           | `string (list)` | Index         | When the request object refers to a pod, the initial gid that will be used for all containers. This combines information from both the pod and container security contexts and uses 0 if no gid is specified |
+| `ka.req.pod.containers.proc_mount`                 | `string (list)` | Index         | When the request object refers to a pod, the procMount types for all containers                                                                                                                              |
+| `ka.req.role.rules`                                | `string (list)` | None          | When the request object refers to a role/cluster role, the rules associated with the role                                                                                                                    |
+| `ka.req.role.rules.apiGroups`                      | `string (list)` | Index         | When the request object refers to a role/cluster role, the api groups associated with the role's rules                                                                                                       |
+| `ka.req.role.rules.nonResourceURLs`                | `string (list)` | Index         | When the request object refers to a role/cluster role, the non resource urls associated with the role's rules                                                                                                |
+| `ka.req.role.rules.verbs`                          | `string (list)` | Index         | When the request object refers to a role/cluster role, the verbs associated with the role's rules                                                                                                            |
+| `ka.req.role.rules.resources`                      | `string (list)` | Index         | When the request object refers to a role/cluster role, the resources associated with the role's rules                                                                                                        |
+| `ka.req.pod.fs_group`                              | `string`        | None          | When the request object refers to a pod, the fsGroup gid specified by the security context.                                                                                                                  |
+| `ka.req.pod.supplemental_groups`                   | `string (list)` | None          | When the request object refers to a pod, the supplementalGroup gids specified by the security context.                                                                                                       |
+| `ka.req.pod.containers.add_capabilities`           | `string (list)` | Index         | When the request object refers to a pod, all capabilities to add when running the container.                                                                                                                 |
+| `ka.req.service.type`                              | `string`        | None          | When the request object refers to a service, the service type                                                                                                                                                |
+| `ka.req.service.ports`                             | `string (list)` | Index         | When the request object refers to a service, the service's ports                                                                                                                                             |
+| `ka.req.pod.volumes.hostpath`                      | `string (list)` | Index         | When the request object refers to a pod, all hostPath paths specified for all volumes                                                                                                                        |
+| `ka.req.volume.hostpath`                           | `string`        | Key, Required | Deprecated by ka.req.pod.volumes.hostpath. Return true if the provided (host) path prefix is used by any volume                                                                                              |
+| `ka.req.pod.volumes.flexvolume_driver`             | `string (list)` | Index         | When the request object refers to a pod, all flexvolume drivers specified for all volumes                                                                                                                    |
+| `ka.req.pod.volumes.volume_type`                   | `string (list)` | Index         | When the request object refers to a pod, all volume types for all volumes                                                                                                                                    |
+| `ka.resp.name`                                     | `string`        | None          | The response object name                                                                                                                                                                                     |
+| `ka.response.code`                                 | `string`        | None          | The response code                                                                                                                                                                                            |
+| `ka.response.reason`                               | `string`        | None          | The response reason (usually present only for failures)                                                                                                                                                      |
+| `ka.useragent`                                     | `string`        | None          | The useragent of the client who made the request to the apiserver                                                                                                                                            |
+| `ka.sourceips`                                     | `string (list)` | Index         | The IP addresses of the client who made the request to the apiserver                                                                                                                                         |
+| `ka.cluster.name`                                  | `string`        | None          | The name of the k8s cluster                                                                                                                                                                                  |
+<!-- /README-PLUGIN-FIELDS -->
+## Usage
+### Configuration
+Here's an example of configuration of `falco.yaml`:
 ```yaml
-- name: okta
+plugins:
+  - name: k8saudit-ovh
+    library_path: libk8saudit-ovh.so
+    open_params: "gra1.logs.ovh.com/tail/?tk=bbbc8ce0-b2b5-4318-a23e-24eeeb69b6fe"
+  - name: json
+    library_path: libjson.so
+    init_config: ""
+load_plugins: [k8saudit-ovh, json]
+```
+**Open Parameters**
+A string which contains the WebSocket URL of your OVHcloud MKS Cluster (required).
+[Follow this guide](https://help.ovhcloud.com/csm/fr-logs-data-platform-ldp-tail?id=kb_article_view&sysparm_article=KB0037675#retrieve-your-websocket-address) to retrieve the OVHcloud LDP URL.
+### Rules
+TODO: xxxx
+Install plugin
+- name: k8saudit-eks
   type: plugin
   registry: ghcr.io
-  repository: falcosecurity/plugins/plugin/okta
-  description: Okta Log Events
-  home: https://github.com/falcosecurity/plugins/tree/master/plugins/okta
+  repository: falcosecurity/plugins/plugin/k8saudit-eks
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/falcosecurity/plugins/
+        certificate-github-workflow: ""
+  description: Read Kubernetes Audit Events from OVHcloud MKS Clusters
+  home: https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-eks
   keywords:
     - audit
-    - log-events
-    - okta
+    - audit-log
+    - audit-events
+    - kubernetes
+    - eks
+    - aws
+    - k8saudit-eks
   license: Apache-2.0
   maintainers:
     - email: cncf-falco-dev@lists.cncf.io
       name: The Falco Authors
   sources:
-    - https://github.com/falcosecurity/plugins/tree/master/plugins/okta
-- name: okta-rules
-  type: rulesfile
-  registry: ghcr.io
-  repository: falcosecurity/plugins/ruleset/okta
-  description: Okta Log Events
-  home: https://github.com/falcosecurity/plugins/tree/master/plugins/okta
-  keywords:
-    - audit
-    - log-events
-    - okta
-    - okta-rules
-  license: Apache-2.0
-  maintainers:
-    - email: cncf-falco-dev@lists.cncf.io
-      name: The Falco Authors
-  sources:
-    - https://github.com/falcosecurity/plugins/tree/master/plugins/okta/rules
-```
-
-### Index Storage Backends
-
-Indices for *falcoctl* can be retrieved from various storage backends. The supported index storage backends are listed in the table below. Note if you do not specify a backend type when adding a new index *falcoctl* will try to guess based on the `URI Scheme`:
-
-| Name  | URI Scheme | Description                                                                                   |
-| ----- | ---------- | --------------------------------------------------------------------------------------------- |
-| http  | http://    | Can be used to retrieve indices via simple HTTP GET requests.                                 |
-| https | https://   | Convenience alias for the HTTP backend.                                                       |
-| gcs   | gs://      | For indices stored as Google Cloud Storage objects. Supports application default credentials. |
-| file  | file://    | For indices stored on the local file system.                                                  |
-| s3    | s3://      | For indices stored as AWS S3 objects. Supports default credentials, IRSA.                     |
-
-
-#### falcoctl index add
-New indexes are configured to be used by the *falcoctl* tool by adding them through the `index add` command. There are no limits to the number of indexes that can be added to the *falcoctl* tool. When adding a new index the tool adds a new entry in a file called **indexes.yaml** and downloads the *index* file in `~/.config/falcoctl`. The same folder is used to store the **indexes.yaml** file, too.
-The following command adds a new index named *falcosecurity*:
-```bash
-$ falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
-```
-
-The following command adds the same index *falcosecurity*, but explicitly sets the storage backend to `https`:
-```bash
-$ falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml https
-```
-#### falcoctl index list
-Using the `index list` command you can check the configured `indexes` in your local system:
-```bash
-$ falcoctl index list
-NAME            URL                                                     ADDED                   UPDATED            
-$ falcosecurity   https://falcosecurity.github.io/falcoctl/index.yaml     2022-10-25 15:01:25     2022-10-25 15:01:25
-```
-#### falcoctl index update
-The `index update` allows to update a previously configured `index` file by syncing the local one with the remote one:
-```bash
-$ falcoctl index update falcosecurity
-```
-#### falcoctl index remove
-When we want to remove an `index` file that we configured previously, the `index remove` command is the one we need:
-```bash
-$ falcoctl index remove falcosecurity
-```
-The above command will remove the **falcosecurity** index from the local system.
-
-## Falcoctl artifact
-The *falcoctl* tool provides different commands to interact with Falco **artifacts**. It makes easy to *seach*, *install* and get *info* for the **artifacts** provided by a given `index` file. For these commands to properly work we need to configure at least an `index` file in our system as shown in the previus section.
-#### Falcoctl artifact search
-The `artifact search` command allows to search for **artifacts** provided by the `index` files configured in *falcoctl*. The command supports searches by name or by keywords and displays all the **artifacts** that match the search. Assuming that we have already configured the `index` provided by the `falcosecurity` organization, the following command shows all the **artifacts** that work with **Kubernetes**:
-```bash
-$ falcoctl artifact search kubernetes
-INDEX           ARTIFACT        TYPE            REGISTRY        REPOSITORY                            
-falcosecurity   k8saudit        plugin          ghcr.io         falcosecurity/plugins/plugin/k8saudit 
-falcosecurity   k8saudit-rules  rulesfile       ghcr.io         falcosecurity/plugins/ruleset/k8saudit
-```
-
-#### Falcoctl artifact info
-As per the name, `artifact info` prints some info for a given **artifact**:
-```bash
-$ falcoctl artifact info k8saudit
-REF                                             TAGS                                          
-ghcr.io/falcosecurity/plugins/plugin/k8saudit   0.1.0 0.2.0 0.2.1 0.3.0 0.4.0-rc1 0.4.0 latest
-```
-It shows the OCI **reference** and **tags** for the **artifact** of interest. Thot info is usually used with other commands.
-
-#### Falcoctl artifact install
-The above commands help us to find all the necessary info for a given **artifact**. The `artifact install` command installs an **artifact**. It pulls the **artifact** from remote repository, and saves it in a given directory. The following command installs the *k8saudit* plugin in the default path:
-```bash
-$ falcoctl artifact install k8saudit
- INFO  Reading all configured index files from "/home/aldo/.config/falcoctl/indexes.yaml"
- INFO  Preparing to pull "ghcr.io/falcosecurity/plugins/plugin/k8saudit:latest"
- INFO  Remote registry "ghcr.io" implements docker registry API V2                                                                                                                                              
- INFO  Pulling 44136fa355b3: ############################################# 100% 
- INFO  Pulling ded0b5419f40: ############################################# 100% 
- INFO  Pulling 107d1230f3f0: ############################################# 100% 
- INFO  Artifact successfully installed in "/usr/share/falco/plugins"
-```
-
-By default, if we give the name of an **artifact** it will search for the **artifact** in the configured `index` files and downlaod the `latest` version. The commands accepts also the OCI **reference** of an **artifact**. In this case, it will ignore the local `index` files.
- The command has two flags:
- * `--plugins-dir`: directory where to install plugins. Defaults to `/usr/share/falco/plugins`;
- * `--rulesfiles-dir`: directory where to install rules. Defaults to `/etc/falco`.
-
- > If the repositories of the **artifacts** your are trying to install are not public then you need to authenticate to the remote registry.
-
-#### Falcoctl artifact follow
-The above commands allow us to keep up-to-date one or more given **artifacts**. The `artifact follow` command checks for updates on a periodic basis and then downloads and installs the latest version, as specified by the passed tags. 
-It pulls the **artifact** from remote repository, and saves it in a given directory. The following command installs the *github-rules* rulesfile in the default path:
-```bash
- $ falcoctl artifact follow github-rules
- WARN  falcosecurity already exists with the same configuration, skipping
- INFO  Reading all configured index files from "/root/.config/falcoctl/indexes.yaml"
-INFO: Creating follower for "github-rules", with check every 6h0m0s
- INFO  Starting follower for "ghcr.io/falcosecurity/plugins/ruleset/github:latest"
- INFO   (ghcr.io/falcosecurity/plugins/ruleset/github:latest) found new version under tag "latest"
- INFO   (ghcr.io/falcosecurity/plugins/ruleset/github:latest) artifact with tag "latest" correctly installed
-
-```
-
-By default, if we give the name of an **artifact** it will search for the **artifact** in the configured `index` files and downlaod the `latest` version. The commands accepts also the OCI **reference** of an **artifact**. In this case, it will ignore the local `index` files.
- The command can specify the directory where to install the *rulesfile* artifacts through the `--rulesfiles-dir` flag (defaults to `/etc/falco`).
-
- > If the repositories of the **artifacts** your are trying to install are not public then you need to authenticate to the remote registry.
- 
- > Please note that only **rulesfile** artifact can be followed.
-
- ## Falcoctl registry
-
- The `registry` commands interact with OCI registries allowing the user to authenticate, pull and push artifacts. We have tested the *falcoctl* tool with the **ghcr.io** registry, but it should work with all the registries that support the OCI artifacts.
-
-### Falcoctl registry auth
-The `registry auth` command authenticates a user to a given OCI registry.
-
-#### Falcoctl registry auth basic
-The `registry auth basic` command authenticates a user to a given OCI registry using HTTP Basic Authentication. Run the command in advance for any private registries.
-
-#### Falcoctl registry auth oauth
-The `registry auth oauth` command retrieves access and refresh tokens for OAuth2.0 client credentials flow authentication. Run the command in advance for any private registries.
-
-#### Falcoctl registry auth gcp
-The `registry auth gcp` command retrieves access tokens using [Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials). In particular, it supports access token retrieval using Google Compute Engine metadata server and Workload Identity, useful to authenticate your deployed Falco workloads. Run the command in advance for Artifact Registry authentication.
-
-Two typical use cases:
-
-1. You are manipulating some rules or plugins and use `falcoctl` to pull or push to an Artifact Registry:
-   1. run `gcloud auth application-default login` to generate a JSON credential file that will be used by applications.
-   2. run `falcoctl registry auth gcp europe-docker.pkg.dev` for instance to use Application Default Credentials to connect to any repository hosted at `europe-docker.pkg.dev`.
-2. You have a Falco instance with Falcoctl as a side car, running in a GKE cluster with Workload Identity enabled:
-   1. Workload Identity is correctly set up for the Falco instance (see the [documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity)).
-   2. Add an environment variable like `FALCOCTL_REGISTRY_AUTH_GCP=europe-docker.pkg.dev` to enable GCP authentication for the `europe-docker.pkg.dev` registry.
-   3. The Falcoctl instance will get access tokens from the metadata server and use them to authenticate to the registry and download your rules.
-
-### Falcoctl registry push
-It pushes local files and references the artifact uniquely. The following command shows how to push a local file to a remote registry:
-```bash
-$ falcoctl registry push --type=plugin ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0 clouddrail-0.3.0-linux-x86_64.tar.gz --platform linux/amd64
-```
-The type denotes the **artifact** type in this case *plugins*. The `ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0` is the unique reference that points to the **artifact**.
-Currently, *falcoctl* supports only two types of artifacts: **plugin** and **rulesfile**. Based on **artifact type** the commands accepts different flags:
-* `--add-floating-tags`: add the floating tags for the major and minor versions
-* `--annotation-source`: set annotation source for the artifact;
-* `--depends-on`: set an artifact dependency (can be specified multiple times). Example: `--depends-on my-plugin:1.2.3`
-* `--tag`: additional artifact tag. Can be repeated multiple time 
-* `--type`: type of artifact to be pushed. Allowed values: `rulesfile`, `plugin`, `asset`
-
-### Falcoctl registry pull
-Pulling **artifacts** involves specifying the reference. The type of **artifact** is not required since the tool will implicitly extract it from the OCI **artifact**:
-```
-$ falcoctl registry pull ghcr.io/falcosecurity/plugins/plugin/cloudtrail:0.3.0
-```
-
-# Falcoctl Environment Variables
-
-The arguments of `falcoctl` can passed as arguments through:
- - command line options
- - environment variables
- - configuration file
-
-The `falcoctl` arguments can be passed through these different modalities are prioritized in the following order: command line options, environment variables, and finally the configuration file. This means that if an argument is passed through multiple modalities, the value set in the command line options will take precedence over the value set in environment variables, which will in turn take precedence over the value set in the configuration file.
-
-This is the list of the environment variable that `falcoctl` will use:
-
-| Name                                      | Content                                                          |
-| ----------------------------------------- | ---------------------------------------------------------------- |
-| `FALCOCTL_REGISTRY_AUTH_BASIC`            | `registry,username,password;registry1,username1,password1`       |
-| `FALCOCTL_REGISTRY_AUTH_OAUTH`            | `registry,client-id,client-secret,token-url;registry1`           |
-| `FALCOCTL_REGISTRY_AUTH_GCP`              | `registry;registry1`                                             |
-| `FALCOCTL_INDEXES`                        | `index-name,https://falcosecurity.github.io/falcoctl/index.yaml` |
-| `FALCOCTL_ARTIFACT_FOLLOW_EVERY`          | `6h0m0s`                                                         |
-| `FALCOCTL_ARTIFACT_FOLLOW_CRON`           | `cron-formatted-string`                                          |
-| `FALCOCTL_ARTIFACT_FOLLOW_REFS`           | `ref1;ref2`                                                      |
-| `FALCOCTL_ARTIFACT_FOLLOW_FALCOVERSIONS`  | `falco-version-url`                                              |
-| `FALCOCTL_ARTIFACT_FOLLOW_RULESFILEDIR`   | `rules-directory-path`                                           |
-| `FALCOCTL_ARTIFACT_FOLLOW_PLUGINSDIR`     | `plugins-directory-path`                                         |
-| `FALCOCTL_ARTIFACT_FOLLOW_TMPDIR`         | `tmp-directory-path`                                             |
-| `FALCOCTL_ARTIFACT_INSTALL_REFS`          | `ref1;ref2`                                                      |
-| `FALCOCTL_ARTIFACT_INSTALL_RULESFILESDIR` | `rules-directory-path`                                           |
-| `FALCOCTL_ARTIFACT_INSTALL_PLUGINSDIR`    | `plugins-directory-path`                                         |
-| `FALCOCTL_ARTIFACT_NOVERIFY`              |                                                                  | 
-
-Please note that when passing multiple arguments via an environment variable, they must be separated by a semicolon. Moreover, multiple fields of the same argument must be separated by a comma.
-
-Here is an example of `falcoctl` usage with environment variables:
-
-```bash
-$ export FALCOCTL_REGISTRY_AUTH_OAUTH="localhost:6000,000000,999999,http://localhost:9096/token"
-$ falcoctl registry oauth 
-```
-
-# Container image signature verification
-
-Official container images for Falcoctl, starting from version 0.5.0, are signed with [cosign](https://github.com/sigstore/cosign) v2. To verify the signature run:
-
-```bash
-$ FALCOCTL_VERSION=x.y.z # e.g. 0.5.0
-$ cosign verify docker.io/falcosecurity/falcoctl:$FALCOCTL_VERSION --certificate-oidc-issuer=https://token.actions.githubusercontent.com --certificate-identity-regexp=https://github.com/falcosecurity/falcoctl/ --certificate-github-workflow-ref=refs/tags/v$FALCOCTL_VERSION
-```
+    - https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit-eks

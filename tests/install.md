@@ -2,6 +2,13 @@
 
 This procedure allows you to test locally (on ubuntu) the k8saudit-ovh plugin.
 
+## Build the plugin
+
+```bash
+cd ..
+make build
+```
+
 ## Install Falco (Ubuntu)
 
 ```bash

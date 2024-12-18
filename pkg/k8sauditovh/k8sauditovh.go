@@ -153,7 +153,7 @@ func (p *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
 				continue
 			}
 
-			// Parse audit events payload thanls to k8saudit extract parse and extract methods
+			// Parse audit events payload thanks to k8saudit extract parse and extract methods
 			values, err := p.Plugin.ParseAuditEventsPayload([]byte(m.String())[12:])
 			if err != nil {
 				p.Logger.Println(err)

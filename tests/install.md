@@ -20,7 +20,6 @@ echo "deb [signed-by=/usr/share/keyrings/falco-archive-keyring.gpg] https://down
 
 sudo apt-get update -y
 
-# TODO: pas besoin en Modern eBPF! ;-) 
 # Install some required dependencies that are needed to build the Kernel Module and the eBPF probe
 sudo apt install -y dkms make linux-headers-$(uname -r)
 # If you use falcoctl driver loader to build the eBPF probe locally you need also clang toolchain
@@ -31,8 +30,11 @@ sudo apt install -y dialog
 # Install the Falco package
 sudo apt-get install -y falco
 
+Select "Modern eBPF" Falco driver:
 ![Falco drivers](falco-drivers.png)
 ```
+
+And select the automatic ruleset option (1).
 
 Check the version is correctly installed
 
@@ -56,7 +58,7 @@ Driver:
 
 ```bash
 LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
-curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_linux_amd64.tar.gz" | tar -xz
+curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_linux_amd64.tar.gz" | tar -xz falcoctl
 sudo install -o root -g root -m 0755 falcoctl /usr/local/bin/falcoctl
 ```
 
@@ -71,13 +73,13 @@ Client Version: 0.10.1
 Add official artifacts index:
 
 ```bash
-sudo falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
+$ sudo falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
 ```
 
 Check the index is correctly added:
 
 ```bash
-$ falcoctl index list
+$ sudo falcoctl index list
 NAME            URL                                                     ADDED                   UPDATED
 falcosecurity   https://falcosecurity.github.io/falcoctl/index.yaml     2024-12-17 15:41:56     2024-12-17 15:41:56
 ```

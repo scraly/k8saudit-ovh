@@ -1,3 +1,5 @@
+- required_engine_version: 15
+
 - required_plugin_versions:
   - name: k8saudit
     version: 0.7.0
@@ -6,3 +8,12 @@
         version: 0.1.0
   - name: json
     version: 0.7.0
+
+- rule: TEST
+  desc: >
+    Detect any attempt to portforward
+  condition: ka.verb='get'
+  output: verb=%ka.verb name=%ka.target.name resp=%ka.response.code namespace=%ka.target.namespace 
+  priority: NOTICE
+  source: k8s_audit
+  tags: [k8s]

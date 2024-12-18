@@ -2,6 +2,13 @@
   type: plugin
   registry: ghcr.io
   repository: scraly/k8saudit-ovh/plugin/k8saudit-ovh
+  signature:
+    cosign:
+        certificate-oidc-issuer: https://token.actions.githubusercontent.com
+        certificate-oidc-issuer-regexp: ""
+        certificate-identity: ""
+        certificate-identity-regexp: https://github.com/scraly/k8saudit-ovh/
+        certificate-github-workflow: ""
   description: Read Kubernetes Audit Events from OVHcloud MKS Clusters
   home: https://github.com/scraly/k8saudit-ovh
   keywords:

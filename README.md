@@ -93,7 +93,7 @@ Here is the current set of supported fields (from `k8saudit` plugin's extractor)
 
 ```bash
 # Add scraly index
-sudo falcoctl index add k8saudit-ovh https://github.com/scraly/k8saudit-ovh/blob/main/index.yaml
+sudo falcoctl index add k8saudit-ovh https://raw.githubusercontent.com/scraly/k8saudit-ovh/refs/heads/main/index.yaml
 # Install k8saudit-ovh Falco plugin
 sudo falcoctl artifact install k8saudit-ovh
 ```

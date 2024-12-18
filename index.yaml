@@ -5,11 +5,17 @@
   description: Read Kubernetes Audit Events from OVHcloud MKS Clusters
   home: https://github.com/scraly/k8saudit-ovh
   keywords:
+    - audit
+    - audit-log
+    - audit-events
+    - kubernetes
+    - mks
+    - ovh
+    - ovhcloud
     - k8saudit-ovh
-    - k8saudit
   license: Apache-2.0
   maintainers:
     - email: scraly@gmail.com
-      name: Aurélie Vache
+      name: Aurelie Vache
   sources:
     - https://github.com/scraly/k8saudit-ovh

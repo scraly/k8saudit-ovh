@@ -105,7 +105,7 @@ Here's an example of configuration of `falco.yaml`:
 ```yaml
 plugins:
   - name: k8saudit-ovh
-    library_path: libk8saudit-ovh.so
+    library_path: /usr/share/falco/plugins/libk8saudit-ovh.so
     open_params: "<OVH LDP WEBSOCKET URL>" # gra<x>.logs.ovh.com/tail/?tk=<ID>
   - name: json
     library_path: libjson.so

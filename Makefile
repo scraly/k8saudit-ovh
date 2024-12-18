@@ -3,7 +3,6 @@ GO ?= go
 
 NAME := k8saudit-ovh
 OUTPUT := lib$(NAME).so
-DESTDIR := /usr/share/falco/plugins
 
 ifeq ($(DEBUG), 1)
     GODEBUGFLAGS= GODEBUG=cgocheck=1
@@ -18,6 +17,3 @@ clean:
 
 build: clean
 	@$(GODEBUGFLAGS) $(GO) build -buildmode=c-shared -buildvcs=false -o $(OUTPUT) ./plugin
-
-install: build
-	mv $(OUTPUT) $(DESTDIR)/

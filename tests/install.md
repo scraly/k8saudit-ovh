@@ -34,12 +34,14 @@ Select "Modern eBPF" Falco driver:
 ![Falco drivers](falco-drivers.png)
 ```
 
-And select the automatic ruleset option (1).
+And select the automatic ruleset option:
+![Falco ruleset](falco-rules-update.png)
 
 Check the version is correctly installed
 
 ```bash
-$ falco --version
+falco --version
+
 Tue Dec 17 15:10:00 2024: Falco version: 0.39.2 (x86_64)
 Tue Dec 17 15:10:00 2024: Falco initialized with configuration files:
 Tue Dec 17 15:10:00 2024:    /etc/falco/falco.yaml | schema validation: ok
@@ -65,7 +67,8 @@ sudo install -o root -g root -m 0755 falcoctl /usr/local/bin/falcoctl
 Check the CLI is correctly installed:
 
 ```bash
-$ falcoctl version
+falcoctl version
+
 Client Version: 0.10.1
 ```
 ## Add Falco Plugin index
@@ -73,13 +76,14 @@ Client Version: 0.10.1
 Add official artifacts index:
 
 ```bash
-$ sudo falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
+sudo falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
 ```
 
 Check the index is correctly added:
 
 ```bash
-$ sudo falcoctl index list
+sudo falcoctl index list
+
 NAME            URL                                                     ADDED                   UPDATED
 falcosecurity   https://falcosecurity.github.io/falcoctl/index.yaml     2024-12-17 15:41:56     2024-12-17 15:41:56
 ```
@@ -90,12 +94,13 @@ The index is not automatically updated, when a new artifact is added to the list
 sudo falcoctl index update falcosecurity
 ```
 
-## Add Falco JSOn plugin
+## Add Falco JSON plugin
 
 Install Falco JSON plugin:
 
 ```bash
-$ sudo falcoctl artifact install json
+sudo falcoctl artifact install json
+
 2024-12-17 15:44:42 INFO  Resolving dependencies ... 
 2024-12-17 15:44:43 INFO  Installing artifacts refs: [ghcr.io/falcosecurity/plugins/plugin/json:latest]
 2024-12-17 15:44:43 INFO  Preparing to pull artifact ref: ghcr.io/falcosecurity/plugins/plugin/json:latest
@@ -116,5 +121,5 @@ $ sudo falcoctl artifact install json
 ## Test Falco with k8saudit-ovh
 
 ```bash
-$ falco -c falco.yaml -r k8s_audit_rules.yaml --disable-source=syscall
+falco -c falco.yaml -r k8s_audit_rules.yaml --disable-source=syscall
 ```

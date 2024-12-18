@@ -26,4 +26,4 @@ go.work.sum
 falcoctl
 
 # config file
-*.yaml
+#*.yaml

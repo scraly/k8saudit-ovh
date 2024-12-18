@@ -1,0 +1,14 @@
+- required_engine_version: 15
+- required_plugin_versions:
+  - name: k8saudit-ovh
+    version: 0.1.0
+
+- rule: Dummy rule
+  desc: >
+    Dummy rule
+  condition: >
+    ka.verb in (get,create,delete,update)
+  output: user=%ka.user.name verb=%ka.verb target=%ka.target.name target.namespace=%ka.target.namespace resource=%ka.target.resource
+  priority: WARNING
+  source: k8s_audit
+  tags: [k8s]

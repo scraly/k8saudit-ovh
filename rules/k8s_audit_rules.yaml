@@ -3,12 +3,12 @@
   - name: k8saudit-ovh
     version: 0.1.0
 
-- rule: Dummy rule
+- rule: TEST
   desc: >
-    Dummy rule
+    Test rule
   condition: >
     ka.verb in (get,create,delete,update)
-  output: user=%ka.user.name verb=%ka.verb target=%ka.target.name target.namespace=%ka.target.namespace resource=%ka.target.resource
-  priority: WARNING
+  output: verb=%ka.verb name=%ka.target.name resp=%ka.response.code namespace=%ka.target.namespace 
+  priority: NOTICE
   source: k8s_audit
   tags: [k8s]

@@ -116,13 +116,13 @@ To test if it works anyway, you can still use this one for example:
   - name: k8saudit-ovh
     version: 0.1.0
 
-- rule: Dummy rule
+- rule: TEST
   desc: >
-    Dummy rule
+    Test rule
   condition: >
     ka.verb in (get,create,delete,update)
-  output: user=%ka.user.name verb=%ka.verb target=%ka.target.name target.namespace=%ka.target.namespace resource=%ka.target.resource
-  priority: WARNING
+  output: verb=%ka.verb name=%ka.target.name resp=%ka.response.code namespace=%ka.target.namespace 
+  priority: NOTICE
   source: k8s_audit
   tags: [k8s]
 ```
@@ -131,17 +131,16 @@ To test if it works anyway, you can still use this one for example:
 
 This plugin requires Falco with version >= **0.35.0**.
 
-```shell
+```bash
 falco -c falco.yaml -r rules/k8s_audit_rules.yaml
 ```
 
-TODO: xxx
-```shell
+```bash
+12:29:51.895849000: Notice verb=get name=<NA> resp=200 namespace=<NA>
+12:29:51.900789000: Notice verb=get name=<NA> resp=200 namespace=<NA>
+^CEvents detected: 2
 Rule counts by severity:
-   WARNING: 1
+   NOTICE: 2
 Triggered rules by rule name:
-   Dummy rule: 1
-Syscall event drop monitoring:
-   - event drop detected: 0 occurrences
-   - num times actions taken: 0
+   TEST: 2
 ```

@@ -17,3 +17,6 @@ clean:
 
 build: clean
 	@$(GODEBUGFLAGS) $(GO) build -buildmode=c-shared -buildvcs=false -o $(OUTPUT) ./plugin
+
+install:
+	sudo cp $(OUTPUT) /usr/share/falco/plugins/

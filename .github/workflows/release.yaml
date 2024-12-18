@@ -59,18 +59,7 @@ jobs:
               --requires plugin_api_version:2.0.0 \
               --depends-on ${{ env.PLUGIN_NAME }}-rules:${{ github.ref_name }} \
               --name ${{ env.PLUGIN_NAME }} \
-              lib${{ env.PLUGIN_NAME }}.so
-
-              cd rules/
-              $DIR/tools/falcoctl/falcoctl registry push \
-              ${{ env.OCI_REGISTRY }}/${{ steps.StringRepoName.outputs.lowercase }}/ruleset/${{ env.PLUGIN_NAME }}:${{ github.ref_name }} \
-              --config /dev/null \
-              --type rulesfile \
-              --version "${{ github.ref_name }}" \
-              --tag latest --tag $MAJOR --tag $MINOR \
-              --depends-on ${{ env.PLUGIN_NAME }}:${{ github.ref_name }} \
-              --name ${{ env.PLUGIN_NAME }}-rules \
-              ${{ env.PLUGIN_NAME }}_rules.yaml              
+              lib${{ env.PLUGIN_NAME }}.so             
         env:
           FALCOCTL_REGISTRY_AUTH_BASIC: ${{ env.OCI_REGISTRY }},${{ github.repository_owner }},${{ secrets.GITHUB_TOKEN }}
 

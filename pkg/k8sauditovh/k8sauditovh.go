@@ -1,9 +1,14 @@
 package k8sauditovh
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"text/template"
+	"time"
 
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk"
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins"
@@ -24,7 +29,10 @@ var (
 	EventSource string
 )
 
+const pluginName = "k8saudit-ovh"
+
 type PluginConfig struct {
+	MaxEventSize uint64 `json:"maxEventSize"         jsonschema:"title=Maximum event size,description=Maximum size of single audit event (Default: 262144),default=262144"`
 }
 
 // Plugin represents our plugin
@@ -32,6 +40,11 @@ type Plugin struct {
 	k8saudit.Plugin
 	Logger *log.Logger
 	Config PluginConfig
+}
+
+// Resets sets the configuration to its default values
+func (k *PluginConfig) Reset() {
+	k.MaxEventSize = uint64(sdk.DefaultEvtSize)
 }
 
 // SetInfo is used to set the Info of the plugin
@@ -59,6 +72,9 @@ func (p *Plugin) Info() *plugins.Info {
 // we use it for setting default configuration values and mapping
 // values from `init_config` (json format for this plugin)
 func (p *Plugin) Init(config string) error {
+	p.Plugin.Config.Reset()
+	p.Config.Reset()
+	p.Logger = log.New(os.Stderr, "["+pluginName+"] ", log.LstdFlags|log.LUTC|log.Lmsgprefix)
 	return nil
 }
 
@@ -69,7 +85,27 @@ func (p *Plugin) OpenParams() ([]sdk.OpenParam, error) {
 }
 
 // Open is called by Falco plugin framework for opening a stream of events, we call that an instance
-func (Plugin *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
+func (p *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
+	t, err := template.New("template").Funcs(template.FuncMap{
+		"color":    color,
+		"bColor":   bColor,
+		"noColor":  func() string { return color("reset") },
+		"date":     date,
+		"join":     join,
+		"concat":   concat,
+		"duration": duration,
+		"int":      toInt,
+		"float":    toFloat,
+		"string":   toString,
+		"get":      get,
+		"column":   column,
+		"begin":    begin,
+		"contain":  contain,
+		"level":    level,
+	}).Parse("{{._appID}}> {{.short_message}}")
+	if err != nil {
+		log.Fatalf("Failed to parse pattern: %s", err.Error())
+	}
 
 	if ovhLDPURL == "" {
 		return nil, fmt.Errorf("OVHcloud LDP URL can't be empty")
@@ -77,15 +113,15 @@ func (Plugin *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
 
 	eventC := make(chan source.PushEvent)
 
-	// launch an async worker that listens for bitcoin tx and pushes them
-	// to the event channel
 	go func() {
 		defer close(eventC)
 
-		u := url.URL{Scheme: "wss", Host: ovhLDPURL, Path: "inv"}
+		u := url.URL{Scheme: "wss", Host: ovhLDPURL, Path: ""}
 		v, _ := url.QueryUnescape(u.String())
 
-		wsChan, _, err := websocket.DefaultDialer.Dial(v, make(http.Header))
+		headers := make(http.Header)
+		// headers.Set("Origin", "http://mySelf")
+		wsChan, _, err := websocket.DefaultDialer.Dial(v, headers)
 		if err != nil {
 			eventC <- source.PushEvent{Err: err}
 			return
@@ -93,28 +129,44 @@ func (Plugin *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
 		defer wsChan.Close()
 
 		for {
+			wsChan.SetReadDeadline(time.Now().Add(5 * time.Second))
 			_, msg, err := wsChan.ReadMessage()
 			if err != nil {
 				eventC <- source.PushEvent{Err: err}
 				return
 			}
 
-			// Parse audit events payload thanls to k8saudit extract parse and extract methods
-			values, err := Plugin.Plugin.ParseAuditEventsPayload(msg)
+			// Extract Message
+			var logMessage struct {
+				Message string `json:"message"`
+			}
+			json.Unmarshal(msg, &logMessage)
+
+			// Extract infos
+			var message map[string]interface{}
+			json.Unmarshal([]byte(logMessage.Message), &message)
+
+			var m bytes.Buffer
+			err = t.Execute(&m, message)
 			if err != nil {
-				Plugin.Logger.Println(err)
+				p.Logger.Println(err)
+				continue
+			}
+
+			// Parse audit events payload thanls to k8saudit extract parse and extract methods
+			values, err := p.Plugin.ParseAuditEventsPayload([]byte(m.String())[12:])
+			if err != nil {
+				p.Logger.Println(err)
 				continue
 			}
 			for _, j := range values {
 				if j.Err != nil {
-					Plugin.Logger.Println(j.Err)
+					p.Logger.Println(j.Err)
 					continue
 				}
 
-				//eventC <- source.PushEvent{Data: *j}
 				eventC <- *j
 			}
-
 		}
 	}()
 	return source.NewPushInstance(eventC)

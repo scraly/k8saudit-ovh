@@ -1,6 +1,32 @@
-
 tasks:
-  - init: make
+    - name: install Falco
+      openMode: split-left
+      command: |
+          curl -fsSL https://falco.org/repo/falcosecurity-packages.asc | sudo gpg --dearmor -o /usr/share/keyrings/falco-archive-keyring.gpg 
+          echo "deb [signed-by=/usr/share/keyrings/falco-archive-keyring.gpg] https://download.falco.org/packages/deb stable main" | sudo tee -a /etc/apt/sources.list.d/falcosecurity.list
+          sudo apt-get update -y
+          sudo apt install -y dkms make linux-headers-$(uname -r)
+          sudo apt install -y clang llvm
+          sudo apt install -y dialog
+          sudo apt-get install -y falco
+
+    - name: install FalcoCTL
+      openMode: split-right
+      command: |
+          LATEST=$(curl -sI https://github.com/falcosecurity/falcoctl/releases/latest | awk '/location: /{gsub("\r","",$2);split($2,v,"/");print substr(v[8],2)}')
+          curl --fail -LS "https://github.com/falcosecurity/falcoctl/releases/download/v${LATEST}/falcoctl_${LATEST}_linux_amd64.tar.gz" | tar -xz falcoctl
+          sudo install -o root -g root -m 0755 falcoctl /usr/local/bin/falcoctl
+
+    - name: add JSON falco plugin
+      command: |
+          sudo falcoctl index add falcosecurity https://falcosecurity.github.io/falcoctl/index.yaml
+          sudo falcoctl index list
+          sudo falcoctl artifact install json
+
+    - name: Build k8saudit-ovh Falco plugin
+      command: make
+
+  #- init: make
 
 vscode:
   extensions:

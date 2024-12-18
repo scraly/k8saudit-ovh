@@ -16,6 +16,8 @@ permissions:
 jobs:
   publish-oci-artifacts:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.oci_build.outputs.REGISTRY_UPDATE_STATUS }}
     steps:
       - name: Checkout Falcoctl Repo
         uses: actions/checkout@v3

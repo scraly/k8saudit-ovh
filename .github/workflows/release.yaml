@@ -57,7 +57,6 @@ jobs:
               --tag latest --tag $MAJOR --tag $MINOR \
               --platform linux/amd64 \
               --requires plugin_api_version:2.0.0 \
-              --depends-on ${{ env.PLUGIN_NAME }}-rules:${{ github.ref_name }} \
               --name ${{ env.PLUGIN_NAME }} \
               lib${{ env.PLUGIN_NAME }}.so             
         env:

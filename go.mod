@@ -1,6 +1,6 @@
 module github.com/scraly/k8saudit-ovh
 
-go 1.23.3
+go 1.23
 
 require (
 	github.com/falcosecurity/plugin-sdk-go v0.7.4

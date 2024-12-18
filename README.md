@@ -1,19 +1,24 @@
 # Kubernetes Audit Events Plugin for OVHcloud
 
 ## Introduction
+
 This plugin extends Falco to support [Kubernetes Audit Events](https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#audit-backends) from OVHcloud MKS clusters as a new data source.
 For more details about what Audit logs are, see the [README of k8saudit plugin](https://github.com/falcosecurity/plugins/blob/main/plugins/k8saudit/README.md).
 
 ### Functionality
+
 This plugin supports consuming Kubernetes Audit Events stored in OVHcloud Log Data Platform (LDP) for the MKS Clusters, see [OVHcloud official documentation](https://help.ovhcloud.com/csm/fr-public-cloud-kubernetes-forwarding-audit-logs?id=kb_article_view&sysparm_article=KB0062284) for details.
 
 ## Capabilities
+
 The `k8saudit-ovh` uses the field extraction methods of the [`k8saudit`](https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit) plugin as the format for the Audit Logs is same.
 
 ### Event Source
+
 The event source for Kubernetes Audit Events from OVHcloud is `k8s_audit`, it allows to use same rules than `k8saudit` plugin.
 
 ### Supported Fields
+
 Here is the current set of supported fields (from `k8saudit` plugin's extractor):
 <!-- README-PLUGIN-FIELDS -->
 |                        NAME                        |      TYPE       |      ARG      |                                                                                                 DESCRIPTION                                                                                                  |
@@ -83,6 +88,15 @@ Here is the current set of supported fields (from `k8saudit` plugin's extractor)
 <!-- /README-PLUGIN-FIELDS -->
 
 ## Usage
+
+### Install the plugin
+
+```bash
+# Add scraly index
+sudo falcoctl index add k8saudit-ovh https://github.com/scraly/k8saudit-ovh/blob/main/index.yaml
+# Install k8saudit-ovh Falco plugin
+sudo falcoctl artifact install k8saudit-ovh
+```
 
 ### Configuration
 

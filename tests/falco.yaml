@@ -1,8 +1,7 @@
 plugins:
   - name: k8saudit-ovh
-    library_path: /workspace/k8saudit-ovh/libk8saudit-ovh.so
-    open_params: "gra1.logs.ovh.com/tail/?tk=bbbc8ce0-b2b5-4318-a23e-24eeeb69b6fe"
-  - name: json
+    library_path: libk8saudit-ovh.so
+    open_params: "<OVH LDP WEBSOCKET URL>" # gra<x>.logs.ovh.com/tail/?tk=<ID>  - name: json
     library_path: /usr/share/falco/plugins/libjson.so
     init_config: ''
     open_params: ''

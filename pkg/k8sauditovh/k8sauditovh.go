@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -17,8 +18,6 @@ import (
 	"github.com/falcosecurity/plugins/plugins/k8saudit/pkg/k8saudit"
 
 	"github.com/gorilla/websocket"
-
-	"log"
 )
 
 var (
@@ -110,7 +109,7 @@ func (p *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
 		"level":    level,
 	}).Parse("{{._appID}}> {{.short_message}}")
 	if err != nil {
-		log.Fatalf("Failed to parse pattern: %s", err.Error())
+		p.Logger.Fatalf("Failed to parse pattern: %s", err.Error())
 	}
 
 	if ovhLDPURL == "" {
@@ -143,13 +142,13 @@ func (p *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
 			if t, ok := err.(net.Error); ok && t.Timeout() {
 				// Timeout, send a Ping && continue
 				if err := wsChan.WriteMessage(websocket.PingMessage, nil); err != nil {
-					log.Println("The end host probably closed the connection", err.Error())
+					p.Logger.Println("The end host probably closed the connection", err.Error())
 				}
 				continue
 			}
 
 			if err != nil {
-				log.Printf("Error while reading from %q: %q. Will try to reconnect after 1s...\n", u.Host, err.Error())
+				p.Logger.Printf("Error while reading from %q: %q. Will try to reconnect after 1s...\n", u.Host, err.Error())
 				time.Sleep(1 * time.Second)
 				break
 			}

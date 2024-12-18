@@ -30,7 +30,12 @@ var (
 	EventSource string
 )
 
-const pluginName = "k8saudit-ovh"
+const (
+	pluginName = "k8saudit-ovh"
+
+	// Time allowed to read the next pong message from the client.
+	pongWait = 60 * time.Second
+)
 
 type PluginConfig struct {
 	MaxEventSize uint64 `json:"maxEventSize"         jsonschema:"title=Maximum event size,description=Maximum size of single audit event (Default: 262144),default=262144"`
@@ -130,7 +135,8 @@ func (p *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
 		defer wsChan.Close()
 
 		for {
-			wsChan.SetReadDeadline(time.Now().Add(5 * time.Second))
+			//wsChan.SetReadDeadline(time.Now().Add(5 * time.Second))
+			wsChan.SetReadDeadline(time.Now().Add(pongWait))
 			_, msg, err := wsChan.ReadMessage()
 
 			// Keep the WebSocket connection alive

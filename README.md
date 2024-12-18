@@ -115,6 +115,7 @@ load_plugins: [k8saudit-ovh, json]
 **Open Parameters**
 
 A string which contains the LDP WebSocket URL of your OVHcloud MKS Cluster (required).
+
 [Follow this guide](https://help.ovhcloud.com/csm/fr-logs-data-platform-ldp-tail?id=kb_article_view&sysparm_article=KB0037675#retrieve-your-websocket-address) to retrieve the OVHcloud LDP URL.
 
 ### Rules

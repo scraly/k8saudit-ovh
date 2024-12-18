@@ -1,7 +1,7 @@
 - name: k8saudit-ovh
   type: plugin
   registry: ghcr.io
-  repository: scraly/k8saudit-ovh/
+  repository: scraly/k8saudit-ovh/plugin/k8saudit-ovh
   description: Read Kubernetes Audit Events from OVHcloud MKS Clusters
   home: https://github.com/scraly/k8saudit-ovh
   keywords:

@@ -3,12 +3,16 @@
 ## Introduction
 This plugin extends Falco to support [Kubernetes Audit Events](https://kubernetes.io/docs/tasks/debug-application-cluster/audit/#audit-backends) from OVHcloud MKS clusters as a new data source.
 For more details about what Audit logs are, see the [README of k8saudit plugin](https://github.com/falcosecurity/plugins/blob/main/plugins/k8saudit/README.md).
+
 ### Functionality
 This plugin supports consuming Kubernetes Audit Events stored in OVHcloud Log Data Platform (LDP) for the MKS Clusters, see [OVHcloud official documentation](https://help.ovhcloud.com/csm/fr-public-cloud-kubernetes-forwarding-audit-logs?id=kb_article_view&sysparm_article=KB0062284) for details.
+
 ## Capabilities
 The `k8saudit-ovh` uses the field extraction methods of the [`k8saudit`](https://github.com/falcosecurity/plugins/tree/main/plugins/k8saudit) plugin as the format for the Audit Logs is same.
+
 ### Event Source
 The event source for Kubernetes Audit Events from OVHcloud is `k8s_audit`, it allows to use same rules than `k8saudit` plugin.
+
 ### Supported Fields
 Here is the current set of supported fields (from `k8saudit` plugin's extractor):
 <!-- README-PLUGIN-FIELDS -->
@@ -77,22 +81,72 @@ Here is the current set of supported fields (from `k8saudit` plugin's extractor)
 | `ka.sourceips`                                     | `string (list)` | Index         | The IP addresses of the client who made the request to the apiserver                                                                                                                                         |
 | `ka.cluster.name`                                  | `string`        | None          | The name of the k8s cluster                                                                                                                                                                                  |
 <!-- /README-PLUGIN-FIELDS -->
+
 ## Usage
+
 ### Configuration
+
 Here's an example of configuration of `falco.yaml`:
+
 ```yaml
 plugins:
   - name: k8saudit-ovh
     library_path: libk8saudit-ovh.so
-    open_params: "gra1.logs.ovh.com/tail/?tk=bbbc8ce0-b2b5-4318-a23e-24eeeb69b6fe"
+    open_params: "<OVH LDP WEBSOCKET URL>" # gra<x>.logs.ovh.com/tail/?tk=<ID>
   - name: json
     library_path: libjson.so
     init_config: ""
 load_plugins: [k8saudit-ovh, json]
 ```
 **Open Parameters**
-A string which contains the WebSocket URL of your OVHcloud MKS Cluster (required).
+
+A string which contains the LDP WebSocket URL of your OVHcloud MKS Cluster (required).
 [Follow this guide](https://help.ovhcloud.com/csm/fr-logs-data-platform-ldp-tail?id=kb_article_view&sysparm_article=KB0037675#retrieve-your-websocket-address) to retrieve the OVHcloud LDP URL.
+
+### Rules
+
+The `k8saudit-ovh` plugin ships with no default rule for test purpose, you can use the same rules than those for `k8saudit` plugin. See [here](https://github.com/falcosecurity/plugins/blob/main/plugins/k8saudit/rules/k8s_audit_rules.yaml).
+
+
+To test if it works anyway, you can still use this one for example:
+
+```yaml
+- required_engine_version: 15
+- required_plugin_versions:
+  - name: k8saudit-ovh
+    version: 0.1.0
+
+- rule: Dummy rule
+  desc: >
+    Dummy rule
+  condition: >
+    ka.verb in (get,create,delete,update)
+  output: user=%ka.user.name verb=%ka.verb target=%ka.target.name target.namespace=%ka.target.namespace resource=%ka.target.resource
+  priority: WARNING
+  source: k8s_audit
+  tags: [k8s]
+```
+
+### Running locally
+
+This plugin requires Falco with version >= **0.35.0**.
+
+```shell
+falco -c falco.yaml -r rules/k8s_audit_rules.yaml
+```
+
+TODO: xxx
+```shell
+Rule counts by severity:
+   WARNING: 1
+Triggered rules by rule name:
+   Dummy rule: 1
+Syscall event drop monitoring:
+   - event drop detected: 0 occurrences
+   - num times actions taken: 0
+```
+
+
 ### Rules
 TODO: xxxx
 Install plugin

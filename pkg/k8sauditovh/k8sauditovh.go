@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -131,9 +132,20 @@ func (p *Plugin) Open(ovhLDPURL string) (source.Instance, error) {
 		for {
 			wsChan.SetReadDeadline(time.Now().Add(5 * time.Second))
 			_, msg, err := wsChan.ReadMessage()
+
+			// Keep the WebSocket connection alive
+			if t, ok := err.(net.Error); ok && t.Timeout() {
+				// Timeout, send a Ping && continue
+				if err := wsChan.WriteMessage(websocket.PingMessage, nil); err != nil {
+					log.Println("The end host probably closed the connection", err.Error())
+				}
+				continue
+			}
+
 			if err != nil {
-				eventC <- source.PushEvent{Err: err}
-				return
+				log.Printf("Error while reading from %q: %q. Will try to reconnect after 1s...\n", u.Host, err.Error())
+				time.Sleep(1 * time.Second)
+				break
 			}
 
 			// Extract Message

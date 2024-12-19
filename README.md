@@ -166,6 +166,12 @@ You can use the official [Falco Helm chart](https://github.com/falcosecurity/cha
 
 ```yaml
 tty: true
+kubernetes: false
+
+controller:
+  kind: deployment
+  deployment:
+    replicas: 1
 
 falco:
   rules_files:
@@ -174,12 +180,17 @@ falco:
   plugins:
     - name: k8saudit-ovh
       library_path: libk8saudit-ovh.so
-      open_params: "gra<x>.logs.ovh.com/tail/?tk=<ID>" # replace with your LDP WebSocket URL
+      open_params: "gra<x>.logs.ovh.com/tail/?tk=<ID>" # Replace with your LDP Websocket URL
     - name: json
       library_path: libjson.so
       init_config: ""
   # Plugins that Falco will load. Note: the same plugins are installed by the falcoctl-artifact-install init container.
   load_plugins: [k8saudit-ovh, json]
+
+driver:
+  enabled: false
+collectors:
+  enabled: false
 
 # use falcoctl to install automatically the plugin and the rules
 falcoctl:
@@ -196,11 +207,13 @@ falcoctl:
       url: https://raw.githubusercontent.com/scraly/k8saudit-ovh/refs/heads/main/index.yaml
     artifact:
       allowedTypes:
-        - rulesfile
         - plugin
+        - rulesfile
       install:
         resolveDeps: false
-        refs: [k8saudit-rules:0.5, k8saudit-ovh:0.1.0, falco-rules, json:0]
+        refs: [k8saudit-rules:0.5, k8saudit-ovh:0.1, json:0]
       follow:
         refs: [k8saudit-rules:0.5]
 ```
+
+Note: You can also install Falcosidekick and enable the webUI to watch your events in an interface.

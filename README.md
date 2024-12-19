@@ -168,6 +168,7 @@ You can use the official [Falco Helm chart](https://github.com/falcosecurity/cha
 tty: true
 kubernetes: false
 
+# Just a Deployment with 1 replica (instead of a Daemonset) to have only one Pod that pulls the MKS Audit Logs from a OVHcloud LDP
 controller:
   kind: deployment
   deployment:
@@ -211,9 +212,9 @@ falcoctl:
         - rulesfile
       install:
         resolveDeps: false
-        refs: [k8saudit-rules:0.5, k8saudit-ovh:0.1, json:0]
+        refs: [k8saudit-rules:0, k8saudit-ovh:0.1, json:0]
       follow:
-        refs: [k8saudit-rules:0.5]
+        refs: [k8saudit-rules:0]
 ```
 
 Note: You can also install Falcosidekick and enable the webUI to watch your events in an interface.

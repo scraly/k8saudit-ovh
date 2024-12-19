@@ -159,3 +159,48 @@ Rule counts by severity:
 Triggered rules by rule name:
    TEST: 2
 ```
+
+### Running in an OVHcloud MKS cluster
+
+You can use the official [Falco Helm chart](https://github.com/falcosecurity/charts/tree/master/falco) to deploy it, with the following `values.yaml`:
+
+```yaml
+tty: true
+
+falco:
+  rules_files:
+    - /etc/falco/k8s_audit_rules.yaml
+    - /etc/falco/rules.d
+  plugins:
+    - name: k8saudit-ovh
+      library_path: libk8saudit-ovh.so
+      open_params: "gra<x>.logs.ovh.com/tail/?tk=<ID>" # replace with your LDP WebSocket URL
+    - name: json
+      library_path: libjson.so
+      init_config: ""
+  # Plugins that Falco will load. Note: the same plugins are installed by the falcoctl-artifact-install init container.
+  load_plugins: [k8saudit-ovh, json]
+
+# use falcoctl to install automatically the plugin and the rules
+falcoctl:
+  artifact:
+    install:
+      enabled: true
+    follow:
+      enabled: true
+  config:
+    indexes:
+    - name: falcosecurity
+      url: https://falcosecurity.github.io/falcoctl/index.yaml
+    - name: k8saudit-ovh
+      url: https://raw.githubusercontent.com/scraly/k8saudit-ovh/refs/heads/main/index.yaml
+    artifact:
+      allowedTypes:
+        - rulesfile
+        - plugin
+      install:
+        resolveDeps: false
+        refs: [k8saudit-rules:0.5, k8saudit-ovh:0.1.0, falco-rules, json:0]
+      follow:
+        refs: [k8saudit-rules:0.5]
+```

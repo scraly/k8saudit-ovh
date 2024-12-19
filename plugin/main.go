@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	PluginID          uint32 = 21
+	PluginID          uint32 = 22
 	PluginName               = "k8saudit-ovh"
 	PluginDescription        = "Read Kubernetes Audit Events for OVHcloud MKS"
 	PluginContact            = "https://github.com/scraly/k8saudit-ovh"
